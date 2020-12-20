@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, send_file
+import os
 
 #Models
 class Book:
@@ -56,4 +57,5 @@ def getThumb(thumbUrl: str):
     return send_file('../thumbs/' + thumbUrl, mimetype='image/png')
 
 if __name__ == '__main__':
-    app.run(host= '0.0.0.0', port=80, debug=False)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host= '0.0.0.0', port=port, debug=False)
