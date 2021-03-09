@@ -1,5 +1,7 @@
-from flask import Flask, jsonify, send_file
+from flask import Flask, jsonify, send_file, request
 import os
+import csv
+import uuid
 
 #Models
 class Book:
@@ -34,11 +36,23 @@ books = [
             Book("Олимпиадное программирование", "Антти Лааксонен", "Образование", "Эта замечательная книга представляет собой всестороннее введение в современное олимпиадное программирование. В книге приведено много приемов проектирования алгоритмов, которые известны опытным олимпиадникам, но до сих пор обсуждались лишь на различных сетевых форумах и в блогах.", "https://spbstu-books-api.herokuapp.com/thumbs/olimpiadnoe-programmirovanie.png", "https://spbstu-books-api.herokuapp.com/files/olimpiadnoe-programmirovanie.pdf", False),
         ]
 
+class User:
+    def __init__(self, email: str, password: str, token: str):
+        self.email = email
+        self.password = password
+        self.token = token
 
+def jsonTokenWithMessage(token: str, message: str):
+        json = {
+            'message': message,
+            'token': token
+        }
+        return json
 
 
 #Flask
 app = Flask(__name__)
+users = []
 
 @app.route('/getBooks', methods= ['GET'])
 def getBooks():
@@ -56,6 +70,46 @@ def getBook(fileUrl: str):
 def getThumb(thumbUrl: str):
     return send_file('../thumbs/' + thumbUrl, mimetype='image/png')
 
+@app.route('/registration', methods= ['POST'])
+def registration():
+    email = str(request.json['email'])
+    password = str(request.json['password'])
+    for user in users:
+        if user.email == email:
+            return jsonify(jsonTokenWithMessage('', 'User with the same email has been already registered!'))
+    new_user = User(email, password, uuid.uuid4())
+    with open('../config/users.csv', mode='a') as users_csv:
+        csv_writer = csv.writer(users_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow([new_user.email, new_user.password, new_user.token])
+    users.append(new_user)
+    return jsonify(jsonTokenWithMessage(new_user.token, 'Registered!'))
+    
+
+@app.route('/login', methods= ['POST'])
+def login():
+    email = str(request.json['email'])
+    password = str(request.json['password'])
+    for user in users:
+        print(user.email, ' ', email)
+        print(user.password, ' ', password)
+        if user.email == email:
+            if user.password == password:
+                return jsonify(jsonTokenWithMessage(user.token, 'Logged In!'))
+            else:
+                return jsonify(jsonTokenWithMessage('', 'Invalid creds!'))
+    return jsonify(jsonTokenWithMessage('', 'User does not exists!'))
+
 if __name__ == '__main__':
+    if os.path.exists('../config/users.csv'):
+        with open('../config/users.csv', 'r') as users_csv:
+            csv_reader = csv.reader(users_csv, delimiter=',')
+            for row in csv_reader:
+                email, password, token = row
+                users.append(User(email, password, token))
+    else:
+        os.mkdir('../config')
+        f = open('../config/users.csv', 'w+')
+        f.close()
+
     port = int(os.environ.get("PORT", 5000))
-    app.run(host= '0.0.0.0', port=port, debug=False)
+    app.run(host= '0.0.0.0', port=port, debug=True)
