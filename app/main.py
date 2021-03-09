@@ -78,9 +78,9 @@ def registration():
         if user.email == email:
             return jsonify(jsonTokenWithMessage('', 'User with the same email has been already registered!'))
     new_user = User(email, password, uuid.uuid4())
-    with open('../config/users.csv', mode='a') as users_csv:
-        csv_writer = csv.writer(users_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        csv_writer.writerow([new_user.email, new_user.password, new_user.token])
+    #with open('../config/users.csv', mode='a') as users_csv:
+        #csv_writer = csv.writer(users_csv, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        #csv_writer.writerow([new_user.email, new_user.password, new_user.token])
     users.append(new_user)
     return jsonify(jsonTokenWithMessage(new_user.token, 'Registered!'))
     
@@ -100,16 +100,16 @@ def login():
     return jsonify(jsonTokenWithMessage('', 'User does not exists!'))
 
 if __name__ == '__main__':
-    if os.path.exists('../config/users.csv'):
-        with open('../config/users.csv', 'r') as users_csv:
-            csv_reader = csv.reader(users_csv, delimiter=',')
-            for row in csv_reader:
-                email, password, token = row
-                users.append(User(email, password, token))
-    else:
-        os.mkdir('../config')
-        f = open('../config/users.csv', 'w+')
-        f.close()
+    #if os.path.exists('../config/users.csv'):
+       # with open('../config/users.csv', 'r') as users_csv:
+           # csv_reader = csv.reader(users_csv, delimiter=',')
+           # for row in csv_reader:
+            #    email, password, token = row
+            #    users.append(User(email, password, token))
+    #else:
+        #os.mkdir('../config')
+       # f = open('../config/users.csv', 'w+')
+        #f.close()
 
     port = int(os.environ.get("PORT", 5000))
     app.run(host= '0.0.0.0', port=port, debug=True)
